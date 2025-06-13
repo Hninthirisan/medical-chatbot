@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
       data && data.length
         ? data
             .map(
-              (r: any, i: number) =>
+              (r: QAResult, i: number) =>
                 `Q${i + 1}: ${r.patient_question}\nA${i + 1}: ${r.doctor_response}`
             )
             .join("\n\n")
@@ -140,3 +140,11 @@ Based on the context and your knowledge, provide a clear, safe, and helpful answ
     );
   }
 }
+
+type QAResult = {
+  id: number;
+  patient_question: string;
+  doctor_response: string;
+  similarity?: number;
+};
+
