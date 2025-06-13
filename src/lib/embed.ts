@@ -1,5 +1,4 @@
 // src/lib/embed.ts
-import { pipeline, Pipeline } from '@xenova/transformers';
 
 import type { FeatureExtractionPipeline } from '@xenova/transformers';
 
