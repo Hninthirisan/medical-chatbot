@@ -8,6 +8,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { motion } from "motion/react"
 
 type Message = { role: "user" | "bot"; text: string };
+type QAResult = {
+  patient_question: string;
+  doctor_response: string;
+  similarity?: number;
+};
+
 
 export default function ChatBox() {
   const [input, setInput] = useState("");
@@ -101,9 +107,3 @@ function formatBotText(text: string): React.JSX.Element[] {
   // For AI output, this is generally safe as it never contains scripts.
   return [<span dangerouslySetInnerHTML={{ __html: clean }} key="f" />];
 }
-type QAResult = {
-  id: number;
-  patient_question: string;
-  doctor_response: string;
-  similarity?: number;
-};
