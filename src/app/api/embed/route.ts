@@ -1,4 +1,5 @@
-// src/app/api/embed/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextResponse } from "next/server";
 import { getEmbedding } from "@/lib/embed";
 
