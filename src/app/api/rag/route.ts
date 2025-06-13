@@ -1,22 +1,21 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { getEmbedding } from "@/lib/embed";
 
-// ─────────────────────────────────────────────────────────────
-// Runtime: keep this on the Node.js runtime (the Edge runtime
-//          doesn't yet support WASM SIMD used by @xenova/transformers)
 export const runtime = "nodejs";
-// ─────────────────────────────────────────────────────────────
 
-// ── Supabase client ──────────────────────────────────────────
+type QAResult = {
+  id: number;
+  patient_question: string;
+  doctor_response: string;
+  similarity?: number;
+};
+
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_ANON_KEY!
 );
 
-// ── Helper: call DeepSeek-v3 via LLMAPI ─────────────────────
 async function askLLM(prompt: string): Promise<string> {
   const res = await fetch("https://api.llmapi.com/chat/completions", {
     method: "POST",
@@ -49,12 +48,10 @@ async function askLLM(prompt: string): Promise<string> {
   return content;
 }
 
-// ── Main RAG endpoint ───────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const { question } = await req.json();
 
-    // 1. Input validation
     if (typeof question !== "string" || question.trim().length < 6) {
       return NextResponse.json({
         results: [],
@@ -63,10 +60,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Embed the user question (no HTTP call — shared code)
     const queryEmbedding = await getEmbedding(question.trim());
 
-    // 3. Supabase vector search (top-3 matches, threshold 0.5)
     const { data, error } = await supabase.rpc("match_forum_qa", {
       query_embedding: queryEmbedding,
       match_threshold: 0.5,
@@ -85,7 +80,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Build context for the prompt
     const context =
       data && data.length
         ? data
@@ -96,7 +90,6 @@ export async function POST(req: NextRequest) {
             .join("\n\n")
         : "";
 
-    // 5. If nothing relevant found, exit early
     if (!context) {
       return NextResponse.json({
         results: [],
@@ -105,7 +98,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 6. Compose RAG prompt
     const prompt = `
 Here are similar medical Q&A from a trusted forum:
 ${context}
@@ -115,7 +107,6 @@ User's question: ${question}
 Based on the context and your knowledge, provide a clear, safe, and helpful answer. If context is insufficient, explain what more information is needed.
 `.trim();
 
-    // 7. Query the LLM
     let llmAnswer = "Sorry, the medical assistant cannot answer at the moment.";
     try {
       llmAnswer = await askLLM(prompt);
@@ -123,28 +114,20 @@ Based on the context and your knowledge, provide a clear, safe, and helpful answ
       console.error("LLM API error:", e);
     }
 
-    // 8. Return results + answer
     return NextResponse.json({
       results: data,
       answer: llmAnswer,
     });
-  } catch (err: any) {
+  } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : String(err);
     console.error("API /rag error:", err);
     return NextResponse.json(
       {
         results: [],
         answer: "An internal error occurred. Please try again later.",
-        error: err.message ?? String(err),
+        error: errorMessage,
       },
       { status: 500 }
     );
   }
 }
-
-type QAResult = {
-  id: number;
-  patient_question: string;
-  doctor_response: string;
-  similarity?: number;
-};
-
