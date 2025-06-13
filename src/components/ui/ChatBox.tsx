@@ -41,7 +41,7 @@ export default function ChatBox() {
     } else if (data.results && data.results.length > 0) {
       botText = data.results
         .map(
-          (r: QAResult, i: number) =>
+          (r: QAResult) =>
             `Q: ${r.patient_question}\nA: ${r.doctor_response}`
         )
         .join("\n\n");
