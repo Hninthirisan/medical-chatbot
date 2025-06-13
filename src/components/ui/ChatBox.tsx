@@ -35,7 +35,7 @@ export default function ChatBox() {
     } else if (data.results && data.results.length > 0) {
       botText = data.results
         .map(
-          (r: any, i: number) =>
+          (r: QAResult, i: number) =>
             `Q: ${r.patient_question}\nA: ${r.doctor_response}`
         )
         .join("\n\n");
@@ -101,3 +101,9 @@ function formatBotText(text: string): React.JSX.Element[] {
   // For AI output, this is generally safe as it never contains scripts.
   return [<span dangerouslySetInnerHTML={{ __html: clean }} key="f" />];
 }
+type QAResult = {
+  id: number;
+  patient_question: string;
+  doctor_response: string;
+  similarity?: number;
+};
